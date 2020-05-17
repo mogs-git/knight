@@ -54,8 +54,8 @@ def print_array arr
 	return s
 end
 
-start_pos = Vertex.new(0,0)
-finish_pos = Vertex.new(4, 2)
+start_pos = Vertex.new(3,3)
+finish_pos = Vertex.new(3, 4)
 
 def construct_levels (start_pos, finish_pos)
 	levels = [[start_pos]]
@@ -67,8 +67,70 @@ def construct_levels (start_pos, finish_pos)
 		neighbour_vertices = neighbour_vertices.uniq(&:position)
 		levels.push(neighbour_vertices)
 	end
+	levels.last.keep_if{|vertex| vertex == finish_pos}
 	return levels
 end
 
 levels = construct_levels(start_pos, finish_pos)
 print_levels(levels)
+
+# puts levels[levels.length-2].keep_if {|vertex| levels.last[0].neighbours.include?(vertex.position)}
+
+# puts levels.last[0].neighbours[0] == Vertex.new(4,6).position
+
+def prune_levels (levels)
+	i = levels.length-1
+	while i > 0
+		parent_level_neighbours = []
+		levels[i].each {|vertex| parent_level_neighbours.push(vertex.neighbours)}
+		levels[i-1].keep_if {|sub_vertex| parent_level_neighbours.flatten.include?(sub_vertex.position)}
+		i -= 1
+	end
+	return levels
+end
+
+print_levels(prune_levels (levels))
+
+master_array = []
+
+i = levels.length-1
+
+def build_paths_print (parents, children)
+	paths = []
+	parents.each do |parent|
+		valid_children = children.keep_if{|child| parent.neighbours.include?(child.position)}
+		valid_children.each {|child| paths.push([parent.position, child.position])}
+	end
+	return paths
+end
+
+def build_paths (levels)
+	i = levels.length-1
+	paths = [levels.last]
+	while i > 0
+		children = levels[i-1]
+		current_paths = paths.length
+		new_paths = []
+		paths.each do |path|
+			# each parent is an array or path, which needs to be extended using the children of the last vertex in the path
+			parent = path.last 
+			valid_children = children.keep_if{|child| parent.neighbours.include?(child.position)}
+			puts "valid children"
+			valid_children.each{|child| puts child.position}
+			valid_children.each {|child| new_paths.push(path + [child])}
+		end
+		paths = new_paths 
+		i -= 1
+	end
+	paths.each do |el| 
+		puts
+		el.each do |vert| 
+			puts vert.position
+		end
+	end
+	return paths
+end
+
+# puts levels.last.to_s
+# build_paths(levels).each {|path| puts path.length} 
+build_paths(levels)
